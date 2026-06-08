@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,6 +44,8 @@ fun LoginScreen(
     val password = viewModel.password.value
     val isLoggedIn = viewModel.isLoggedIn.value
     val isLoading = viewModel.isLoading.value
+    val loginError = viewModel.loginError.value
+    val isFormValid = email.isNotBlank() && password.isNotBlank() && viewModel.isEmailValid.value
 
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
@@ -104,7 +108,14 @@ fun LoginScreen(
                 onValueChange = viewModel::onEmailChange,
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                isError = !viewModel.isEmailValid.value,
+                supportingText = {
+                    if (!viewModel.isEmailValid.value) {
+                        Text("Format email tidak valid", color = Color.Red)
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -138,19 +149,30 @@ fun LoginScreen(
                 )
             }
 
+            if (loginError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = loginError,
+                    fontSize = 12.sp,
+                    color = Color.Red,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
-            val isFormFilled = email.isNotBlank() && password.isNotBlank()
-            val buttonColor = if (isFormFilled) Color(0xFF4CAF50) else Color(0xFFBDBDBD)
+            val buttonColor = if (isFormValid) Color(0xFF4CAF50) else Color(0xFFBDBDBD)
 
             Button(
                 onClick = { viewModel.login() },
+                enabled = isFormValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = buttonColor
+                    containerColor = buttonColor,
+                    disabledContainerColor = buttonColor
                 )
             ) {
                 Text("Login", fontSize = 18.sp, fontWeight = FontWeight.Medium)

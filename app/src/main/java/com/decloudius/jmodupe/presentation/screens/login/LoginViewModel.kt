@@ -22,16 +22,29 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     private val _isLoading = mutableStateOf(true)
     val isLoading: State<Boolean> = _isLoading
 
+    private val _isEmailValid = mutableStateOf(true)
+    val isEmailValid: State<Boolean> = _isEmailValid
+
+    private val _loginError = mutableStateOf<String?>(null)
+    val loginError: State<String?> = _loginError
+
     init {
         checkLoginStatus()
     }
 
     fun onEmailChange(newEmail: String) {
         _email.value = newEmail
+        _isEmailValid.value = newEmail.isEmpty() || isValidEmail(newEmail)
+        _loginError.value = null
     }
 
     fun onPasswordChange(newPassword: String) {
         _password.value = newPassword
+        _loginError.value = null
+    }
+
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
     private fun checkLoginStatus() {
@@ -43,16 +56,28 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     }
 
     fun login() {
+        if (_email.value.isBlank() || !_isEmailValid.value || _password.value.isBlank()) {
+            return
+        }
         viewModelScope.launch {
-            val user = User(
-                email = _email.value,
-                password = _password.value,
-                name = _email.value.substringBefore("@").replace(".", " ").replaceFirstChar { it.uppercase() },
-                ktp = "1234567890123456",
-                phone = "081234567890"
-            )
-            userRepository.insertUser(user)
-            _isLoggedIn.value = true
+            val existingUser = userRepository.getUserByEmail(_email.value)
+            if (existingUser != null) {
+                if (existingUser.password == _password.value) {
+                    _isLoggedIn.value = true
+                } else {
+                    _loginError.value = "Password salah"
+                }
+            } else {
+                val user = User(
+                    email = _email.value,
+                    password = _password.value,
+                    name = _email.value.substringBefore("@").replace(".", " ").replaceFirstChar { it.uppercase() },
+                    ktp = "1234567890123456",
+                    phone = "081234567890"
+                )
+                userRepository.insertUser(user)
+                _isLoggedIn.value = true
+            }
         }
     }
 }
