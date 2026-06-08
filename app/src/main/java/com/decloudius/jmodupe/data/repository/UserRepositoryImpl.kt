@@ -32,19 +32,6 @@ class UserRepositoryImpl(private val userDao: UserDao) : UserRepository {
         }
     }
 
-    override suspend fun getUserByEmail(email: String): User? {
-        return userDao.getUserByEmail(email)?.let {
-            User(
-                id = it.id,
-                email = it.email,
-                password = it.password,
-                name = it.name,
-                ktp = it.ktp,
-                phone = it.phone
-            )
-        }
-    }
-
     override suspend fun deleteUser() {
         userDao.deleteUser()
     }
